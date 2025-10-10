@@ -65,6 +65,30 @@ const getXeByTaiXe = async (req, res) => {
   }
 };
 
+// Lấy xe theo ID xe (admin và tài xế)
+const getXeById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const xe = await Xe.findById(id).populate(
+      "taixe_id",
+      "email profile.hoten role"
+    );
+
+    if (!xe) {
+      return res.status(404).json({ message: "Không tìm thấy xe" });
+    }
+
+    res.json({
+      message: "Lấy chi tiết xe thành công",
+      xe,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi lấy chi tiết xe" });
+  }
+};
+
 // Tạo mới xe
 const createXe = async (req, res) => {
   try {
@@ -147,6 +171,7 @@ module.exports = {
   getAllXe,
   getXeByTaiXe,
   getXeByTaiXeId,
+  getXeById,
   createXe,
   updateXe,
   deleteXe,

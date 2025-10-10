@@ -9,13 +9,33 @@
  * @swagger
  * /xe/my:
  *   get:
- *     summary: xem detail xe (chỉ Tài xế và Admin)
+ *     summary: xem xe của tài xế (chỉ Tài xế và Admin)
  *     tags: [Xe]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Trả về thông tin xe của tài xế
+ */
+
+/**
+ * @swagger
+ * /xe/{id}:
+ *   get:
+ *     summary: Lấy chi tiết xe theo ID (admin và tài xế)
+ *     tags: [Xe]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID xe
+ *     responses:
+ *       200:
+ *         description: Thành công
  */
 
 /**

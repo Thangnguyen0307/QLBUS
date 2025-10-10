@@ -156,32 +156,6 @@
 
 /**
  * @swagger
- * /users:
- *   get:
- *     summary: Lấy danh sách tất cả người dùng (chỉ Admin)
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Danh sách người dùng
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 users:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/User'
- *       403:
- *         description: Không có quyền truy cập (chỉ admin)
- */
-
-/**
- * @swagger
  * /users/admin-create:
  *   post:
  *     summary: Admin tạo tài khoản người dùng mới

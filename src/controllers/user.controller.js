@@ -23,9 +23,19 @@ const getProfile = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
-    res.json(users);
+    const { role } = req.query;
+    let filter = {};
+    if (role && role !== "all") {
+      filter.role = role;
+    }
+    const users = await User.find(filter).select("-password");
+    res.json({
+      message: "Lấy danh sách người dùng thành công",
+      total: users.length,
+      users,
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Lỗi lấy danh sách người dùng" });
   }
 };
@@ -43,12 +53,11 @@ const createUserByAdmin = async (req, res) => {
 
     // Tạo mật khẩu ngẫu nhiên
     const randomPass = generateRandomPassword(10);
-    const hashedPassword = await bcrypt.hash(randomPass, 10);
 
     // Tạo user mới
     const newUser = new User({
       email,
-      password: hashedPassword,
+      password: randomPass,
       role,
       isVerified: true, // do admin tạo, không cần xác thực OTP
       profile,

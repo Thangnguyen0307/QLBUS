@@ -1,16 +1,19 @@
+// src/app.js
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const routes = require("./routes");
 const config = require("./config");
 const { swaggerUi, specs } = require("./swagger");
-
 const app = express();
+
 app.use(cors());
 app.use(express.json());
+
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
+// Các route chính
 app.use("/api", routes);
 
 mongoose

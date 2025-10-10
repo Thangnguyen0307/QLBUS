@@ -9,6 +9,7 @@ const PhuHuynhSchema = new mongoose.Schema({
 });
 
 const HocSinhInfoSchema = new mongoose.Schema({
+  mahs: String,
   lop: String,
   phu_huynh: PhuHuynhSchema,
   diadiem_don: String,
@@ -19,6 +20,7 @@ const HocSinhInfoSchema = new mongoose.Schema({
 const TaiXeInfoSchema = new mongoose.Schema({
   bienso: String,
   tuyen: String,
+  mabanglai: String,
 });
 
 const AdminInfoSchema = new mongoose.Schema({
@@ -26,14 +28,13 @@ const AdminInfoSchema = new mongoose.Schema({
 });
 
 const ProfileSchema = new mongoose.Schema({
-  mahs: String,
   hoten: String,
   ngaysinh: String,
   gioitinh: String,
   sdt: String,
   diachi: String,
   cccd: String,
-  mabanglai: String,
+  avatar: String,
 });
 
 const UserSchema = new mongoose.Schema(
@@ -42,7 +43,7 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true, select: false },
     role: {
       type: String,
-      enum: ["hoc_sinh", "tai_xe", "admin"],
+      enum: ["hoc_sinh", "tai_xe", "nhan_vien", "admin"],
       default: "hoc_sinh",
     },
     isVerified: {

@@ -27,4 +27,25 @@ async function sendOTPEmail(to, otp) {
   await transporter.sendMail(mailOptions);
 }
 
-module.exports = { sendOTPEmail };
+// ✅ Gửi email khi admin tạo tài khoản
+async function sendPasswordEmail(to, password) {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: "Tài khoản của bạn đã được tạo - Quản lý xe bus",
+    html: `
+      <div style="font-family: Arial, sans-serif;">
+        <h2>Xin chào!</h2>
+        <p>Tài khoản của bạn đã được tạo trên hệ thống <b>Quản lý xe bus</b>.</p>
+        <p><b>Email đăng nhập:</b> ${to}</p>
+        <p><b>Mật khẩu tạm thời:</b> <span style="color:#007bff;">${password}</span></p>
+        <p>Vui lòng đăng nhập và đổi mật khẩu sau khi đăng nhập.</p>
+        <br/>
+        <p>Trân trọng,<br/>Hệ thống Quản lý Xe Bus</p>
+      </div>
+    `,
+  };
+  await transporter.sendMail(mailOptions);
+}
+
+module.exports = { sendOTPEmail, sendPasswordEmail };

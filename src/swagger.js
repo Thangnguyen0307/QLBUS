@@ -1,5 +1,7 @@
+// src/swagger.js
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
+const path = require("path");
 
 const options = {
   definition: {
@@ -14,8 +16,22 @@ const options = {
         url: "http://localhost:4000/api", // đường dẫn base URL của API
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
+    security: [
+      {
+        BearerAuth: [],
+      },
+    ],
   },
-  apis: ["./src/routes/*.js"], // nơi Swagger quét để tạo docs
+  apis: [path.join(__dirname, "docs/*.swagger.js")], // nơi Swagger quét để tạo docs
 };
 
 const specs = swaggerJsdoc(options);

@@ -2,7 +2,7 @@ const AuthService = require("../services/auth.service");
 const { saveOtp, verifyOtp } = require("../services/otp.service");
 const { sendOTPEmail } = require("../utils/mailer");
 
-// 1️⃣ Đăng ký và gửi OTP
+// Đăng ký và gửi OTP
 const register = async (req, res) => {
   try {
     const { user } = await AuthService.register(req.body);
@@ -77,4 +77,31 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, verifyUserOtp, login };
+const changePassword = async (req, res) => {
+  try {
+    const userId = req.user._id; // lấy từ middleware requireAuth
+    const { oldPassword, newPassword } = req.body;
+
+    if (!oldPassword || !newPassword) {
+      return res.status(400).json({ message: "Thiếu mật khẩu cũ hoặc mới" });
+    }
+
+    const updated = await AuthService.changePassword(
+      userId,
+      oldPassword,
+      newPassword
+    );
+
+    res.json({
+      message: "Đổi mật khẩu thành công",
+      user: {
+        id: updated._id,
+        email: updated.email,
+      },
+    });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+module.exports = { register, verifyUserOtp, login, changePassword };

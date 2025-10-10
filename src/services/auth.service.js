@@ -2,6 +2,7 @@
 const jwt = require("jsonwebtoken");
 const config = require("../config");
 const User = require("../models/user.model");
+const bcrypt = require("bcryptjs");
 const { saveOtp } = require("../services/otp.service");
 const { sendOTPEmail } = require("../utils/mailer");
 
@@ -61,10 +62,24 @@ async function verifyUserByEmail(email) {
   await User.updateOne({ email }, { $set: { isVerified: true } });
 }
 
+const changePassword = async (userId, oldPassword, newPassword) => {
+  const user = await User.findById(userId).select("+password");
+  if (!user) throw new Error("Không tìm thấy người dùng");
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) throw new Error("Mật khẩu hiện tại không đúng");
+
+  user.password = newPassword;
+  await user.save();
+
+  return user;
+};
+
 module.exports = {
   login,
   register,
   verifyUserByEmail,
   signAccessToken,
   signRefreshToken,
+  changePassword,
 };

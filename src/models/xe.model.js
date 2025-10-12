@@ -34,6 +34,7 @@ const XeSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    hoc_sinh_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     lich_trinh: LichTrinhSchema,
     nhatky: [NhatKySchema],
   },

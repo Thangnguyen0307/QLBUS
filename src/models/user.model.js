@@ -14,7 +14,7 @@ const HocSinhInfoSchema = new mongoose.Schema({
   phu_huynh: PhuHuynhSchema,
   diadiem_don: String,
   diadiem_tra: String,
-  xe_id: String,
+  xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xes" },
 });
 
 const TaiXeInfoSchema = new mongoose.Schema({

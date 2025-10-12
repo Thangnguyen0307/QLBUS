@@ -1,5 +1,4 @@
 // src/routes/user.routes.js
-
 const router = require("express").Router();
 const UserController = require("../controllers/user.controller");
 const upload = require("../middlewares/uploadCloudinary.middleware");
@@ -19,6 +18,18 @@ router.post(
   requireAuth,
   upload.single("avatar"),
   UserController.uploadAvatar
+);
+router.put(
+  "/update-user/:id",
+  requireAuth,
+  requireRole("admin"),
+  UserController.updateUserByAdmin
+);
+router.get(
+  "/hoc-sinh",
+  requireAuth,
+  requireRole("admin"),
+  UserController.getHocSinhByDiaDiem
 );
 
 module.exports = router;

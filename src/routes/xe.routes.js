@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const XeController = require("../controllers/xe.controller");
+const XeAdminController = require("../controllers/xeAdmin.controller");
 const { requireAuth, requireRole } = require("../middlewares/auth.middleware");
 
 router.get("/", requireAuth, requireRole("admin"), XeController.getAllXe);
@@ -30,5 +31,24 @@ router.post("/", requireAuth, requireRole("admin"), XeController.createXe);
 router.put("/:id", requireAuth, requireRole("admin"), XeController.updateXe);
 
 router.delete("/:id", requireAuth, requireRole("admin"), XeController.deleteXe);
+
+router.post(
+  "/:xeId/add-hocsinh",
+  requireAuth,
+  requireRole("admin"),
+  XeAdminController.addHocSinhToXe
+);
+router.delete(
+  "/:xeId/remove-hocsinh/:hocSinhId",
+  requireAuth,
+  requireRole("admin"),
+  XeAdminController.removeHocSinhFromXe
+);
+router.post(
+  "/transfer-hocsinh/:hocSinhId",
+  requireAuth,
+  requireRole("admin"),
+  XeAdminController.transferHocSinh
+);
 
 module.exports = router;

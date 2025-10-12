@@ -81,6 +81,59 @@ const createUserByAdmin = async (req, res) => {
   }
 };
 
+//update user (admin)
+const updateUserByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params; // userId cần chỉnh sửa
+    const { profile, hoc_sinh_info, tai_xe_info, admin_info, password } =
+      req.body;
+
+    const user = await User.findById(id);
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+
+    // Update profile
+    if (profile) {
+      user.profile = user.profile || {};
+      user.profile.set(profile);
+    }
+
+    // Update subdocuments
+    if (hoc_sinh_info) {
+      user.hoc_sinh_info = user.hoc_sinh_info || {};
+      user.hoc_sinh_info.set(hoc_sinh_info);
+    }
+
+    if (tai_xe_info) {
+      user.tai_xe_info = user.tai_xe_info || {};
+      user.tai_xe_info.set(tai_xe_info);
+    }
+
+    if (admin_info) {
+      user.admin_info = user.admin_info || {};
+      user.admin_info.set(admin_info);
+    }
+
+    // Update password nếu có
+    if (password) {
+      user.password = await bcrypt.hash(password, 10);
+      // Gửi mail thông báo mật khẩu mới
+      await sendPasswordEmail(user.email, password);
+    }
+
+    await user.save();
+    const updatedUser = await User.findById(id).select("-password");
+
+    res.json({
+      message: "Cập nhật người dùng thành công",
+      user: updatedUser,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi cập nhật người dùng" });
+  }
+};
+
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -166,10 +219,47 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
+const getHocSinhByDiaDiem = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+
+    const { type = "don", location } = req.query;
+
+    if (!location) {
+      return res.status(400).json({ message: "Vui lòng cung cấp địa điểm" });
+    }
+
+    const field =
+      type === "tra"
+        ? "hoc_sinh_info.diadiem_tra"
+        : "hoc_sinh_info.diadiem_don";
+
+    const hocSinhList = await User.find({
+      role: "hoc_sinh",
+      [field]: { $regex: location, $options: "i" },
+    }).select("profile hoc_sinh_info");
+
+    res.json({
+      message: "Lấy danh sách học sinh thành công",
+      total: hocSinhList.length,
+      hocSinhList,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ message: "Lỗi khi truy vấn học sinh theo địa điểm" });
+  }
+};
+
 module.exports = {
   getProfile,
   getAllUsers,
   createUserByAdmin,
+  updateUserByAdmin,
   updateProfile,
   uploadAvatar,
+  getHocSinhByDiaDiem,
 };

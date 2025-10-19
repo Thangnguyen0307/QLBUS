@@ -4,6 +4,7 @@ const { sendOTPEmail } = require("../utils/mailer");
 
 // Đăng ký và gửi OTP
 const register = async (req, res) => {
+  console.log("📩 /auth/register called with method:", req.method);
   try {
     const { user } = await AuthService.register(req.body);
     console.log("User sau khi đăng ký:", user);

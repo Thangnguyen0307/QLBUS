@@ -52,8 +52,8 @@ async function register(data) {
   const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
   await saveOtp(user.email, otp, otpExpires);
 
-  // ✅ Gửi email OTP
-  await sendOTPEmail(user.email, otp);
+  // // ✅ Gửi email OTP
+  // await sendOTPEmail(user.email, otp);
 
   return { user };
 }

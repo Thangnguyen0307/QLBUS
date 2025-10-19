@@ -13,13 +13,13 @@ function generateOTP() {
 
 function signAccessToken(user) {
   return jwt.sign({ id: user._id, role: user.role }, config.JWT_ACCESS_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "7d",
   });
 }
 
 function signRefreshToken(user) {
   return jwt.sign({ id: user._id }, config.JWT_REFRESH_SECRET, {
-    expiresIn: "7d",
+    expiresIn: "30d",
   });
 }
 

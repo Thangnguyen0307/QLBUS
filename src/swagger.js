@@ -3,6 +3,8 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const path = require("path");
 
+const baseUrl = process.env.RENDER_EXTERNAL_URL || "http://localhost:4000";
+
 const options = {
   definition: {
     openapi: "3.0.0",
@@ -13,7 +15,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:4000/api", // đường dẫn base URL của API
+        url: `${baseUrl}/api`, // đường dẫn base URL của API
       },
     ],
     components: {

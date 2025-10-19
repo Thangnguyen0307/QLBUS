@@ -2,20 +2,26 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const PhuHuynhSchema = new mongoose.Schema({
-  hoten: String,
-  sdt: String,
-  quanhe: String,
-});
+const PhuHuynhSchema = new mongoose.Schema(
+  {
+    hoten: String,
+    sdt: String,
+    quanhe: String,
+  },
+  { _id: false }
+);
 
-const HocSinhInfoSchema = new mongoose.Schema({
-  mahs: String,
-  lop: String,
-  phu_huynh: PhuHuynhSchema,
-  diadiem_don: String,
-  diadiem_tra: String,
-  xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xes" },
-});
+const HocSinhInfoSchema = new mongoose.Schema(
+  {
+    mahs: String,
+    lop: String,
+    phu_huynh: PhuHuynhSchema,
+    diadiem_don: String,
+    diadiem_tra: String,
+    xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xes" },
+  },
+  { _id: false }
+);
 
 const TaiXeInfoSchema = new mongoose.Schema({
   bienso: String,
@@ -23,19 +29,25 @@ const TaiXeInfoSchema = new mongoose.Schema({
   mabanglai: String,
 });
 
-const AdminInfoSchema = new mongoose.Schema({
-  quyen: [String],
-});
+const AdminInfoSchema = new mongoose.Schema(
+  {
+    quyen: [String],
+  },
+  { _id: false }
+);
 
-const ProfileSchema = new mongoose.Schema({
-  hoten: String,
-  ngaysinh: String,
-  gioitinh: String,
-  sdt: String,
-  diachi: String,
-  cccd: String,
-  avatar: String,
-});
+const ProfileSchema = new mongoose.Schema(
+  {
+    hoten: String,
+    ngaysinh: String,
+    gioitinh: String,
+    sdt: String,
+    diachi: String,
+    cccd: String,
+    avatar: String,
+  },
+  { _id: false }
+);
 
 const UserSchema = new mongoose.Schema(
   {

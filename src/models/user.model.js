@@ -16,12 +16,28 @@ const HocSinhInfoSchema = new mongoose.Schema(
     mahs: String,
     lop: String,
     phu_huynh: PhuHuynhSchema,
-    diadiem_don: String,
-    diadiem_tra: String,
+    diadiem_don_tra: String,
     xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xes" },
+    state: {
+      type: String,
+      enum: ["waiting", "on_bus", "done"],
+      default: "done",
+    },
+    state_time: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { _id: false }
 );
+
+// Tự động cập nhật thời gian khi state thay đổi
+HocSinhInfoSchema.pre("save", function (next) {
+  if (this.isModified("state")) {
+    this.state_time = new Date();
+  }
+  next();
+});
 
 const TaiXeInfoSchema = new mongoose.Schema({
   bienso: String,
@@ -58,10 +74,7 @@ const UserSchema = new mongoose.Schema(
       enum: ["hoc_sinh", "tai_xe", "nhan_vien", "admin"],
       default: "hoc_sinh",
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
+    isVerified: { type: Boolean, default: false },
     profile: ProfileSchema,
     hoc_sinh_info: HocSinhInfoSchema,
     tai_xe_info: TaiXeInfoSchema,
@@ -70,14 +83,12 @@ const UserSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// hash password before save
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
-// compare password method
 UserSchema.methods.comparePassword = function (plain) {
   return bcrypt.compare(plain, this.password);
 };

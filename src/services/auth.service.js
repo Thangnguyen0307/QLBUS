@@ -6,7 +6,7 @@ const bcrypt = require("bcryptjs");
 const { saveOtp } = require("../services/otp.service");
 const { sendOTPEmail } = require("../utils/mailer");
 
-// ✅ Hàm tạo OTP ngẫu nhiên
+// Hàm tạo OTP ngẫu nhiên
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
@@ -47,12 +47,12 @@ async function register(data) {
   });
   await user.save();
 
-  // ✅ Tạo và lưu OTP riêng
+  //  Tạo và lưu OTP riêng
   const otp = generateOTP();
   const otpExpires = new Date(Date.now() + 5 * 60 * 1000);
   await saveOtp(user.email, otp, otpExpires);
 
-  // // ✅ Gửi email OTP
+  // //  Gửi email OTP
   // await sendOTPEmail(user.email, otp);
 
   return { user };

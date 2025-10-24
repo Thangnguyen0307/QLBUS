@@ -1,11 +1,22 @@
+//../controllers/xe.controller.js
 const Xe = require("../models/xe.model");
 const User = require("../models/user.model");
 
 // Lấy tất cả xe (chỉ admin)
 const getAllXe = async (req, res) => {
   try {
-    const dsXe = await Xe.find().populate("taixe_id", "email profile.hoten");
-    res.json(dsXe);
+    const dsXe = await Xe.find()
+      .populate("taixe_id", "email profile.hoten")
+      .populate("hoc_sinh_ids.user_id", "email profile.hoten profile.sdt");
+    const dsXeWithTotal = dsXe.map((xe) => ({
+      ...xe.toObject(),
+      totalHocSinh: xe.hoc_sinh_ids ? xe.hoc_sinh_ids.length : 0,
+    }));
+    res.json({
+      message: "Lấy danh sách xe thành công",
+      total: dsXeWithTotal.length,
+      dsXe: dsXeWithTotal,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi lấy danh sách xe" });
@@ -27,7 +38,7 @@ const getXeByTaiXeId = async (req, res) => {
 
     const xe = await Xe.findOne({ taixe_id })
       .populate("taixe_id", "email profile.hoten role")
-      .lean();
+      .populate("hoc_sinh_ids.user_id", "email profile.hoten profile.sdt");
 
     if (!xe) {
       return res
@@ -49,10 +60,9 @@ const getXeByTaiXeId = async (req, res) => {
 const getXeByTaiXe = async (req, res) => {
   try {
     const userId = req.user.id; // Lấy từ middleware xác thực JWT
-    const xe = await Xe.findOne({ taixe_id: userId }).populate(
-      "taixe_id",
-      "email profile.hoten"
-    );
+    const xe = await Xe.findOne({ taixe_id: userId })
+      .populate("taixe_id", "email profile.hoten")
+      .populate("hoc_sinh_ids.user_id", "email profile.hoten profile.sdt");
 
     if (!xe) {
       return res.status(404).json({ message: "Bạn chưa được gán xe nào" });
@@ -92,25 +102,44 @@ const getXeById = async (req, res) => {
 // Tạo mới xe
 const createXe = async (req, res) => {
   try {
-    const { bienso, suc_chua, tuyen, taixe_id, lich_trinh } = req.body;
-
-    // Kiểm tra tài xế tồn tại và có role = tai_xe
+    const { bienso, suc_chua, tuyen, taixe_id, hoc_sinh_ids = [] } = req.body;
+    // Kiểm tra tài xế hợp lệ
     const taixe = await User.findById(taixe_id);
     if (!taixe || taixe.role !== "tai_xe") {
       return res
         .status(400)
         .json({ message: "Tài xế không hợp lệ hoặc không tồn tại" });
     }
+    // Chuẩn hóa danh sách học sinh
+    const hocSinhDocs = await Promise.all(
+      hoc_sinh_ids.map(async (item) => {
+        const user = await User.findById(item.user_id);
+        if (!user || user.role !== "hoc_sinh") return null;
+        return {
+          user_id: user._id,
+          hoten: user.profile?.hoten || "",
+          ngaysinh: user.profile?.ngaysinh || "",
+          gioitinh: user.profile?.gioitinh || "",
+          sdt: user.profile?.sdt || "",
+          diachi: user.profile?.diachi || "",
+          cccd: user.profile?.cccd || "",
+          avatar: user.profile?.avatar || "",
+        };
+      })
+    );
+
+    const filteredHocSinh = hocSinhDocs.filter(Boolean);
 
     const newXe = new Xe({
       bienso,
       suc_chua,
       tuyen,
       taixe_id,
-      lich_trinh,
+      hoc_sinh_ids: filteredHocSinh,
     });
 
     await newXe.save();
+
     res.status(201).json({
       message: "Tạo xe thành công",
       xe: newXe,
@@ -125,12 +154,11 @@ const createXe = async (req, res) => {
 const updateXe = async (req, res) => {
   try {
     const { id } = req.params;
-    const { bienso, suc_chua, tuyen, taixe_id, lich_trinh } = req.body;
+    const { bienso, suc_chua, tuyen, taixe_id, hoc_sinh_ids } = req.body;
 
     const xe = await Xe.findById(id);
     if (!xe) return res.status(404).json({ message: "Không tìm thấy xe" });
 
-    // Nếu có thay đổi tài xế, kiểm tra role
     if (taixe_id) {
       const taixe = await User.findById(taixe_id);
       if (!taixe || taixe.role !== "tai_xe") {
@@ -144,9 +172,30 @@ const updateXe = async (req, res) => {
     if (bienso) xe.bienso = bienso;
     if (suc_chua) xe.suc_chua = suc_chua;
     if (tuyen) xe.tuyen = tuyen;
-    if (lich_trinh) xe.lich_trinh = lich_trinh;
+
+    if (Array.isArray(hoc_sinh_ids)) {
+      const hocSinhDocs = await Promise.all(
+        hoc_sinh_ids.map(async (item) => {
+          const user = await User.findById(item.user_id);
+          if (!user || user.role !== "hoc_sinh") return null;
+          return {
+            user_id: user._id,
+            hoten: user.profile?.hoten || "",
+            ngaysinh: user.profile?.ngaysinh || "",
+            gioitinh: user.profile?.gioitinh || "",
+            sdt: user.profile?.sdt || "",
+            diachi: user.profile?.diachi || "",
+            cccd: user.profile?.cccd || "",
+            avatar: user.profile?.avatar || "",
+          };
+        })
+      );
+
+      xe.hoc_sinh_ids = hocSinhDocs.filter(Boolean);
+    }
 
     await xe.save();
+
     res.json({ message: "Cập nhật xe thành công", xe });
   } catch (err) {
     console.error(err);

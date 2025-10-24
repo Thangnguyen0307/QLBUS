@@ -1,44 +1,96 @@
+// src/models/xe.model.js
 const mongoose = require("mongoose");
+const User = require("./user.model");
 
-const NhatKyHocSinhSchema = new mongoose.Schema({
-  hs_id: { type: String, required: true }, // Mã học sinh
-  giodon: String,
-  giotra: String,
-  trangthai: {
-    type: String,
-    enum: ["chodon", "dangdon", "hoanthanh", "vang"],
-    default: "chodon",
+// Schema lịch trình
+const LichTrinhSchema = new mongoose.Schema(
+  {
+    diadiem: String,
   },
-});
+  { _id: false }
+);
 
-const NhatKySchema = new mongoose.Schema({
-  nhatky_id: { type: String, required: true },
-  ngay: { type: String, required: true }, // ví dụ "2025-09-21"
-  dshs: [NhatKyHocSinhSchema],
-});
-
-const LichTrinhSchema = new mongoose.Schema({
-  giobatdau_sang: String,
-  gioketthuc_sang: String,
-  giobatdau_chieu: String,
-  gioketthuc_chieu: String,
-});
+const HocSinhInXeSchema = new mongoose.Schema(
+  {
+    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    hoten: String,
+    ngaysinh: String,
+    gioitinh: String,
+    sdt: String,
+    diachi: String,
+    cccd: String,
+    avatar: String,
+  },
+  { _id: false }
+);
 
 const XeSchema = new mongoose.Schema(
   {
+    code_xe: { type: String, unique: true },
     bienso: { type: String, required: true },
     suc_chua: { type: Number, required: true },
     tuyen: { type: String, required: true },
+
     taixe_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    hoc_sinh_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    lich_trinh: LichTrinhSchema,
-    nhatky: [NhatKySchema],
+
+    // Danh sách học sinh
+    hoc_sinh_ids: [HocSinhInXeSchema],
+
+    lich_trinh: [LichTrinhSchema],
   },
   { timestamps: true }
 );
+
+//  Auto-generate code_xe (XE0001, XE0002,...)
+XeSchema.pre("save", async function (next) {
+  // nếu đã có code_xe thì bỏ qua
+  if (this.code_xe) return next();
+
+  try {
+    const Xe = mongoose.model("Xe");
+    const lastXe = await Xe.findOne().sort({ createdAt: -1 }).select("code_xe");
+
+    let nextCodeNumber = 1;
+    if (lastXe && lastXe.code_xe) {
+      const lastNumber = parseInt(lastXe.code_xe.replace("XE", "")) || 0;
+      nextCodeNumber = lastNumber + 1;
+    }
+
+    this.code_xe = "XE" + nextCodeNumber.toString().padStart(4, "0");
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Auto build lich_trinh từ học sinh trong xe
+XeSchema.pre("save", async function (next) {
+  try {
+    if (!this.isModified("hoc_sinh_ids")) return next();
+
+    const userIds = this.hoc_sinh_ids.map((hs) => hs.user_id).filter(Boolean);
+
+    if (userIds.length > 0) {
+      const users = await User.find({
+        _id: { $in: userIds },
+        role: "hoc_sinh",
+      }).select("hoc_sinh_info.diadiem_don_tra");
+
+      this.lich_trinh = users
+        .map((u) => ({
+          diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
+        }))
+        .filter((l) => l.diadiem); // bỏ null
+    }
+
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = mongoose.model("Xe", XeSchema);

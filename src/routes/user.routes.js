@@ -26,6 +26,18 @@ router.put(
   UserController.updateUserByAdmin
 );
 router.get(
+  "/:id",
+  requireAuth,
+  requireRole("admin"),
+  UserController.getUserDetailById
+);
+router.delete(
+  "/:id",
+  requireAuth,
+  requireRole("admin"),
+  UserController.deleteUserById
+);
+router.get(
   "/hoc-sinh",
   requireAuth,
   requireRole("admin"),

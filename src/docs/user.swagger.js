@@ -8,13 +8,13 @@
  *       properties:
  *         _id:
  *           type: string
- *           example: 66fdfe123abc456def789012
+ *           example: 6710ab1234cd5678ef901234
  *         email:
  *           type: string
  *           example: nguyenvana@example.com
  *         role:
  *           type: string
- *           enum: [hoc_sinh, tai_xe, nhan_vien, admin]
+ *           enum: [hoc_sinh, tai_xe, admin]
  *           example: hoc_sinh
  *         isVerified:
  *           type: boolean
@@ -60,7 +60,7 @@
  *           example: "079203001234"
  *         avatar:
  *           type: string
- *           example: "https://khoinguonsangtao.vn/wp-content/uploads/2022/10/anh-trai-dep-han-quoc.jpg"
+ *           example: "https://cdn.example.com/avatar.jpg"
  *
  *     # ======================= PHỤ HUYNH =======================
  *     PhuHuynh:
@@ -82,21 +82,23 @@
  *       properties:
  *         mahs:
  *           type: string
- *           example: "HS12345"
+ *           example: "HS001"
  *         lop:
  *           type: string
  *           example: "12A1"
  *         phu_huynh:
  *           $ref: '#/components/schemas/PhuHuynh'
- *         diadiem_don:
- *           type: string
- *           example: "123 Nguyễn Trãi, Q5"
- *         diadiem_tra:
+ *         diadiem_don_tra:
  *           type: string
  *           example: "Trường THPT Nguyễn Trãi"
- *         xe_id:
+ *         state:
  *           type: string
- *           example: "670adf78e2b33467bb712abc"
+ *           enum: [waiting, on_bus, done]
+ *           example: "done"
+ *         state_time:
+ *           type: string
+ *           format: date-time
+ *           example: "2025-10-25T08:30:00Z"
  *
  *     # ======================= TÀI XẾ INFO =======================
  *     TaiXeInfo:
@@ -126,39 +128,77 @@
 /**
  * @swagger
  * tags:
- *   name: Users
- *   description: Quản lý người dùng
+ *   - name: Users
+ *     description: Quản lý tài khoản người dùng
  */
 
 /**
  * @swagger
  * /users/me:
  *   get:
- *     summary: Lấy thông tin cá nhân người dùng đang đăng nhập
+ *     summary: Lấy thông tin cá nhân của người dùng đang đăng nhập
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Thông tin người dùng hiện tại
+ *         description: Trả về thông tin user hiện tại
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Token không hợp lệ hoặc chưa đăng nhập
+ */
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Lấy danh sách người dùng (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: role
+ *         schema:
+ *           type: string
+ *           enum: [all, hoc_sinh, tai_xe, nhan_vien, admin]
+ *         description: Lọc theo vai trò (mặc định là all)
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *           default: desc
+ *         description: Sắp xếp theo `createdAt`, `asc` = cũ → mới, `desc` = mới → cũ
+ *     responses:
+ *       200:
+ *         description: Danh sách người dùng
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success:
- *                   type: boolean
- *                 user:
- *                   $ref: '#/components/schemas/User'
- *       401:
- *         description: Chưa đăng nhập hoặc token không hợp lệ
+ *                 total:
+ *                   type: integer
+ *                   example: 12
+ *                 users:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/User'
+ *       403:
+ *         description: Không có quyền truy cập (chỉ admin)
+ *       500:
+ *         description: Lỗi server
  */
 
 /**
  * @swagger
  * /users/admin-create:
  *   post:
- *     summary: Admin tạo tài khoản người dùng mới
+ *     summary: Admin tạo tài khoản mới cho người dùng
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -171,10 +211,10 @@
  *             properties:
  *               email:
  *                 type: string
- *                 example: user@example.com
+ *                 example: "hoc_sinh_a@example.com"
  *               role:
  *                 type: string
- *                 enum: [hoc_sinh, tai_xe, nhan_vien, admin]
+ *                 enum: [hoc_sinh, tai_xe, admin]
  *               profile:
  *                 $ref: '#/components/schemas/Profile'
  *               hoc_sinh_info:
@@ -183,18 +223,16 @@
  *                 $ref: '#/components/schemas/TaiXeInfo'
  *     responses:
  *       201:
- *         description: Tạo tài khoản thành công, đã gửi email mật khẩu
+ *         description: Tạo tài khoản thành công, đã gửi mật khẩu qua email
  *       400:
  *         description: Email đã tồn tại
- *       403:
- *         description: Không có quyền (chỉ admin)
  */
 
 /**
  * @swagger
  * /users/update-profile:
  *   put:
- *     summary: Cập nhật thông tin cá nhân của người dùng
+ *     summary: Người dùng cập nhật thông tin cá nhân của mình
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -205,54 +243,24 @@
  *           schema:
  *             type: object
  *             properties:
- *               hoten:
- *                 type: string
- *                 example: "Nguyễn Văn B"
- *               ngaysinh:
- *                 type: string
- *                 format: date
- *                 example: "2006-02-14"
- *               gioitinh:
- *                 type: string
- *                 enum: [Nam, Nữ]
- *                 example: "Nữ"
- *               sdt:
- *                 type: string
- *                 example: "0912345678"
- *               diachi:
- *                 type: string
- *                 example: "456 Đường XYZ, Q1, TP.HCM"
- *               avatar:
- *                 type: string
- *                 example: "https://example.com/avatar.jpg"
+ *               profile:
+ *                 $ref: '#/components/schemas/Profile'
+ *               hoc_sinh_info:
+ *                 $ref: '#/components/schemas/HocSinhInfo'
+ *               tai_xe_info:
+ *                 $ref: '#/components/schemas/TaiXeInfo'
  *     responses:
  *       200:
  *         description: Cập nhật hồ sơ thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Cập nhật thông tin thành công"
- *                 user:
- *                   $ref: '#/components/schemas/User'
  *       400:
  *         description: Dữ liệu không hợp lệ
- *       401:
- *         description: Chưa đăng nhập hoặc token không hợp lệ
  */
 
 /**
  * @swagger
  * /users/upload-avatar:
  *   post:
- *     summary: Upload ảnh đại diện (avatar)
- *     description: Upload avatar người dùng lên Cloudinary, trả về URL ảnh.
+ *     summary: Upload ảnh đại diện người dùng
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -266,10 +274,10 @@
  *               avatar:
  *                 type: string
  *                 format: binary
- *                 description: Ảnh đại diện (file .jpg, .png, ...)
+ *                 description: Ảnh đại diện (.jpg, .png, ...)
  *     responses:
  *       200:
- *         description: Upload thành công, trả về URL ảnh.
+ *         description: Upload thành công
  *         content:
  *           application/json:
  *             schema:
@@ -278,13 +286,9 @@
  *                 message:
  *                   type: string
  *                   example: "Upload avatar thành công"
- *                 avatarUrl:
+ *                 avatar:
  *                   type: string
- *                   example: "https://res.cloudinary.com/demo/image/upload/v123/avatar.jpg"
+ *                   example: "https://res.cloudinary.com/.../avatar.jpg"
  *       400:
  *         description: Không có file gửi lên
- *       401:
- *         description: Chưa đăng nhập hoặc token không hợp lệ
- *       500:
- *         description: Lỗi server
  */

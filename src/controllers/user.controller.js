@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/cloudinary.config");
 const { sendPasswordEmail } = require("../utils/mailer");
 
-// ✅ Hàm tạo chuỗi password ngẫu nhiên
+// Tạo mật khẩu ngẫu nhiên
 function generateRandomPassword(length = 8) {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
@@ -12,23 +12,27 @@ function generateRandomPassword(length = 8) {
   ).join("");
 }
 
+// ✅ Lấy profile người dùng
 const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user._id).select("-password");
     res.json(user);
   } catch (err) {
     res.status(500).json({ message: "Lỗi lấy thông tin người dùng" });
   }
 };
 
+// ✅ Lấy danh sách người dùng (lọc theo role)
 const getAllUsers = async (req, res) => {
   try {
-    const { role } = req.query;
-    let filter = {};
-    if (role && role !== "all") {
-      filter.role = role;
-    }
-    const users = await User.find(filter).select("-password");
+    const { role, sort } = req.query;
+    const filter = role && role !== "all" ? { role } : {};
+
+    // Xác định thứ tự sắp xếp, mặc định mới → cũ
+    const sortOption = sort === "asc" ? { createdAt: 1 } : { createdAt: -1 };
+
+    const users = await User.find(filter).select("-password").sort(sortOption);
+
     res.json({
       message: "Lấy danh sách người dùng thành công",
       total: users.length,
@@ -47,19 +51,15 @@ const createUserByAdmin = async (req, res) => {
       req.body;
 
     const exists = await User.findOne({ email });
-    if (exists) {
-      return res.status(400).json({ message: "Email đã tồn tại" });
-    }
+    if (exists) return res.status(400).json({ message: "Email đã tồn tại" });
 
-    // Tạo mật khẩu ngẫu nhiên
     const randomPass = generateRandomPassword(10);
 
-    // Tạo user mới
     const newUser = new User({
       email,
       password: randomPass,
       role,
-      isVerified: true, // do admin tạo, không cần xác thực OTP
+      isVerified: true,
       profile,
       hoc_sinh_info,
       tai_xe_info,
@@ -67,8 +67,6 @@ const createUserByAdmin = async (req, res) => {
     });
 
     await newUser.save();
-
-    // Gửi email thông báo mật khẩu
     await sendPasswordEmail(email, randomPass);
 
     res.status(201).json({
@@ -81,10 +79,10 @@ const createUserByAdmin = async (req, res) => {
   }
 };
 
-//update user (admin)
+// ✅ Cập nhật người dùng (Admin)
 const updateUserByAdmin = async (req, res) => {
   try {
-    const { id } = req.params; // userId cần chỉnh sửa
+    const { id } = req.params;
     const { profile, hoc_sinh_info, tai_xe_info, admin_info, password } =
       req.body;
 
@@ -92,13 +90,11 @@ const updateUserByAdmin = async (req, res) => {
     if (!user)
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
 
-    // Update profile
     if (profile) {
       user.profile = user.profile || {};
       user.profile.set(profile);
     }
 
-    // Update subdocuments
     if (hoc_sinh_info) {
       user.hoc_sinh_info = user.hoc_sinh_info || {};
       user.hoc_sinh_info.set(hoc_sinh_info);
@@ -114,10 +110,9 @@ const updateUserByAdmin = async (req, res) => {
       user.admin_info.set(admin_info);
     }
 
-    // Update password nếu có
+    // Cập nhật mật khẩu nếu có
     if (password) {
       user.password = await bcrypt.hash(password, 10);
-      // Gửi mail thông báo mật khẩu mới
       await sendPasswordEmail(user.email, password);
     }
 
@@ -134,54 +129,40 @@ const updateUserByAdmin = async (req, res) => {
   }
 };
 
+// ✅ Cập nhật thông tin cá nhân
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId);
-    if (!user) {
+    if (!user)
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
-    }
 
-    // Cho phép gửi trực tiếp hoặc bọc trong profile
     const body = req.body.profile ? req.body.profile : req.body;
-
-    // Nếu có các field phụ (hoc_sinh_info, v.v.) thì lấy thêm
     const { hoc_sinh_info, tai_xe_info, admin_info } = req.body;
 
-    // Khởi tạo nếu chưa có subdocument
     if (!user.profile) user.profile = {};
+    user.profile.set(body);
 
-    switch (user.role) {
-      case "hoc_sinh":
-        if (!user.hoc_sinh_info) user.hoc_sinh_info = {};
-        user.profile.set(body);
-        if (hoc_sinh_info) user.hoc_sinh_info.set(hoc_sinh_info);
-        break;
-
-      case "tai_xe":
-        if (!user.tai_xe_info) user.tai_xe_info = {};
-        user.profile.set(body);
-        if (tai_xe_info) user.tai_xe_info.set(tai_xe_info);
-        break;
-
-      case "nhan_vien":
-        user.profile.set(body);
-        break;
-
-      case "admin":
-        if (!user.admin_info) user.admin_info = {};
-        user.profile.set(body);
-        if (hoc_sinh_info) user.hoc_sinh_info.set(hoc_sinh_info);
-        if (tai_xe_info) user.tai_xe_info.set(tai_xe_info);
-        if (admin_info) user.admin_info.set(admin_info);
-        break;
-
-      default:
-        return res.status(403).json({ message: "Không có quyền cập nhật" });
+    if (user.role === "hoc_sinh") {
+      if (hoc_sinh_info) {
+        user.hoc_sinh_info = user.hoc_sinh_info || {};
+        user.hoc_sinh_info.set(hoc_sinh_info);
+      }
+    } else if (user.role === "tai_xe") {
+      if (tai_xe_info) {
+        user.tai_xe_info = user.tai_xe_info || {};
+        user.tai_xe_info.set(tai_xe_info);
+      }
+    } else if (user.role === "admin") {
+      if (admin_info) {
+        user.admin_info = user.admin_info || {};
+        user.admin_info.set(admin_info);
+      }
     }
 
     await user.save();
     const updatedUser = await User.findById(userId).select("-password");
+
     res.json({
       message: "Cập nhật thông tin thành công",
       user: updatedUser,
@@ -192,6 +173,7 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// ✅ Upload avatar
 const uploadAvatar = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -203,7 +185,6 @@ const uploadAvatar = async (req, res) => {
       return res.status(400).json({ message: "Vui lòng chọn file ảnh" });
     }
 
-    // req.file.path chứa URL Cloudinary do multer-storage-cloudinary tự upload
     user.profile = user.profile || {};
     user.profile.avatar = req.file.path;
     await user.save();
@@ -219,26 +200,21 @@ const uploadAvatar = async (req, res) => {
   }
 };
 
+// ✅ Lấy học sinh theo địa điểm đón/trả (dùng field mới)
 const getHocSinhByDiaDiem = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
     }
 
-    const { type = "don", location } = req.query;
-
+    const { location } = req.query;
     if (!location) {
       return res.status(400).json({ message: "Vui lòng cung cấp địa điểm" });
     }
 
-    const field =
-      type === "tra"
-        ? "hoc_sinh_info.diadiem_tra"
-        : "hoc_sinh_info.diadiem_don";
-
     const hocSinhList = await User.find({
       role: "hoc_sinh",
-      [field]: { $regex: location, $options: "i" },
+      "hoc_sinh_info.diadiem_don_tra": { $regex: location, $options: "i" },
     }).select("profile hoc_sinh_info");
 
     res.json({
@@ -254,6 +230,57 @@ const getHocSinhByDiaDiem = async (req, res) => {
   }
 };
 
+// ✅ Lấy chi tiết user theo ID (Admin)
+const getUserDetailById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Chỉ admin mới được truy cập
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+
+    const user = await User.findById(id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    res.json({
+      message: "Lấy thông tin người dùng thành công",
+      user,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi lấy thông tin người dùng" });
+  }
+};
+
+// ✅ Xóa user theo ID (Admin)
+const deleteUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Chỉ admin mới được truy cập
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    await User.deleteOne({ _id: id });
+
+    res.json({
+      message: "Xóa người dùng thành công",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi khi xóa người dùng" });
+  }
+};
+
 module.exports = {
   getProfile,
   getAllUsers,
@@ -262,4 +289,6 @@ module.exports = {
   updateProfile,
   uploadAvatar,
   getHocSinhByDiaDiem,
+  getUserDetailById,
+  deleteUserById,
 };

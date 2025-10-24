@@ -17,7 +17,6 @@
  *       - `all` — tất cả người dùng
  *       - `hoc_sinh` — chỉ học sinh
  *       - `tai_xe` — chỉ tài xế
- *       - `nhan_vien` — chỉ nhân viên
  *       - `admin` — chỉ admin
  *     security:
  *       - bearerAuth: []
@@ -27,7 +26,7 @@
  *         required: false
  *         schema:
  *           type: string
- *           enum: [all, hoc_sinh, tai_xe, nhan_vien, admin]
+ *           enum: [all, hoc_sinh, tai_xe, admin]
  *           default: all
  *         description: Lọc người dùng theo vai trò (mặc định là tất cả)
  *     responses:
@@ -41,6 +40,9 @@
  *                 success:
  *                   type: boolean
  *                   example: true
+ *                 total:
+ *                   type: integer
+ *                   example: 12
  *                 users:
  *                   type: array
  *                   items:
@@ -94,6 +96,7 @@
  *               properties:
  *                 message:
  *                   type: string
+ *                   example: "Cập nhật người dùng thành công"
  *                 user:
  *                   $ref: '#/components/schemas/User'
  *       404:
@@ -108,7 +111,7 @@
  * @swagger
  * /users/hoc-sinh:
  *   get:
- *     summary: Lấy danh sách học sinh theo địa điểm đón hoặc trả
+ *     summary: Lấy danh sách học sinh theo địa điểm đón/trả
  *     tags: [Admin]
  *     security:
  *       - bearerAuth: []
@@ -143,42 +146,79 @@
  *                 hocSinhList:
  *                   type: array
  *                   items:
- *                     type: object
- *                     properties:
- *                       _id:
- *                         type: string
- *                         example: "64fdf123abc456def789012"
- *                       profile:
- *                         type: object
- *                         properties:
- *                           hoten:
- *                             type: string
- *                             example: "Nguyễn Văn A"
- *                           sdt:
- *                             type: string
- *                             example: "0901234567"
- *                           diachi:
- *                             type: string
- *                             example: "123 Nguyễn Trãi, Quận 3"
- *                       hoc_sinh_info:
- *                         type: object
- *                         properties:
- *                           mahs:
- *                             type: string
- *                             example: "HS001"
- *                           lop:
- *                             type: string
- *                             example: "12A1"
- *                           diadiem_don:
- *                             type: string
- *                             example: "123 Nguyễn Trãi, Quận 3"
- *                           diadiem_tra:
- *                             type: string
- *                             example: "Trường THPT Nguyễn Trãi"
+ *                     $ref: '#/components/schemas/User'
  *       400:
  *         description: Thiếu tham số location
  *       403:
  *         description: Không có quyền truy cập (chỉ admin)
+ *       500:
+ *         description: Lỗi server
+ */
+/**
+ * @swagger
+ * /users/{id}:
+ *   get:
+ *     summary: Lấy chi tiết người dùng theo ID (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID người dùng cần lấy chi tiết
+ *     responses:
+ *       200:
+ *         description: Thông tin người dùng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy thông tin người dùng thành công"
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *       403:
+ *         description: Không có quyền truy cập
+ *       404:
+ *         description: Không tìm thấy người dùng
+ *       500:
+ *         description: Lỗi server
+ */
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Xóa người dùng theo ID (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID người dùng cần xóa
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Xóa người dùng thành công"
+ *       403:
+ *         description: Không có quyền truy cập
+ *       404:
+ *         description: Không tìm thấy người dùng
  *       500:
  *         description: Lỗi server
  */

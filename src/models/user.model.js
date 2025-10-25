@@ -17,7 +17,7 @@ const HocSinhInfoSchema = new mongoose.Schema(
     lop: String,
     phu_huynh: PhuHuynhSchema,
     diadiem_don_tra: String,
-    xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xes" },
+    xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xe" },
     state: {
       type: String,
       enum: ["waiting", "on_bus", "done"],

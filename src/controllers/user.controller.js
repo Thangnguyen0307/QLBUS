@@ -31,7 +31,17 @@ const getAllUsers = async (req, res) => {
     // Xác định thứ tự sắp xếp, mặc định mới → cũ
     const sortOption = sort === "asc" ? { createdAt: 1 } : { createdAt: -1 };
 
-    const users = await User.find(filter).select("-password").sort(sortOption);
+    const users = await User.find(filter)
+      .select("-password")
+      .sort(sortOption)
+      .populate({
+        path: "hoc_sinh_info.xe_id",
+        select: "code_xe bienso tuyen taixe_id",
+        populate: {
+          path: "taixe_id",
+          select: "profile.hoten profile.sdt",
+        },
+      });
 
     res.json({
       message: "Lấy danh sách người dùng thành công",
@@ -215,7 +225,12 @@ const getHocSinhByDiaDiem = async (req, res) => {
     const hocSinhList = await User.find({
       role: "hoc_sinh",
       "hoc_sinh_info.diadiem_don_tra": { $regex: location, $options: "i" },
-    }).select("profile hoc_sinh_info");
+    })
+      .select("profile hoc_sinh_info")
+      .populate({
+        path: "hoc_sinh_info.xe_id",
+        select: "code_xe bienso tuyen",
+      });
 
     res.json({
       message: "Lấy danh sách học sinh thành công",
@@ -240,7 +255,16 @@ const getUserDetailById = async (req, res) => {
       return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
     }
 
-    const user = await User.findById(id).select("-password");
+    const user = await User.findById(id)
+      .select("-password")
+      .populate({
+        path: "hoc_sinh_info.xe_id",
+        select: "code_xe bienso tuyen taixe_id",
+        populate: {
+          path: "taixe_id",
+          select: "profile.hoten profile.sdt",
+        },
+      });
     if (!user) {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }

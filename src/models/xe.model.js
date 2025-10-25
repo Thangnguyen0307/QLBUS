@@ -6,6 +6,14 @@ const User = require("./user.model");
 const LichTrinhSchema = new mongoose.Schema(
   {
     diadiem: String,
+    hoc_sinh_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    hoten_hocsinh: String,
+    sdt_hocsinh: String,
+    phu_huynh: {
+      hoten: String,
+      sdt: String,
+      quanhe: String,
+    },
   },
   { _id: false }
 );
@@ -30,13 +38,11 @@ const XeSchema = new mongoose.Schema(
     bienso: { type: String, required: true },
     suc_chua: { type: Number, required: true },
     tuyen: { type: String, required: true },
-
     taixe_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
     // Danh sách học sinh
     hoc_sinh_ids: [HocSinhInXeSchema],
 
@@ -78,13 +84,19 @@ XeSchema.pre("save", async function (next) {
       const users = await User.find({
         _id: { $in: userIds },
         role: "hoc_sinh",
-      }).select("hoc_sinh_info.diadiem_don_tra");
+      }).select(
+        "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.phu_huynh"
+      );
 
       this.lich_trinh = users
         .map((u) => ({
           diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
+          hoc_sinh_id: u._id,
+          hoten_hocsinh: u.profile?.hoten || "",
+          sdt_hocsinh: u.profile?.sdt || "",
+          phu_huynh: u.hoc_sinh_info?.phu_huynh || {},
         }))
-        .filter((l) => l.diadiem); // bỏ null
+        .filter((l) => l.diadiem);
     }
 
     next();

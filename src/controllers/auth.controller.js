@@ -105,4 +105,64 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { register, verifyUserOtp, login, changePassword };
+// Quên mật khẩu – gửi OTP
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await AuthService.findByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "Email không tồn tại" });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await saveOtp(email, otpCode, new Date(Date.now() + 5 * 60 * 1000));
+    await sendOTPEmail(email, otpCode);
+
+    res.json({
+      message: "Mã OTP đặt lại mật khẩu đã được gửi qua email",
+      email,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+//  Xác minh OTP và đặt lại mật khẩu mới
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({ message: "Thiếu dữ liệu cần thiết" });
+    }
+
+    const isValid = await verifyOtp(email, otp);
+    if (!isValid) {
+      return res
+        .status(400)
+        .json({ message: "OTP không hợp lệ hoặc đã hết hạn" });
+    }
+
+    const user = await AuthService.findByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    const hashed = newPassword;
+    user.password = hashed;
+    await user.save();
+
+    res.json({ message: "Đặt lại mật khẩu thành công" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+module.exports = {
+  register,
+  verifyUserOtp,
+  login,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+};

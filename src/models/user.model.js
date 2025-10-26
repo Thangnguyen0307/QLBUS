@@ -1,6 +1,7 @@
 // src/models/user.model.js
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const { getCoordinates } = require("../utils/geocoding");
 
 const PhuHuynhSchema = new mongoose.Schema(
   {
@@ -17,6 +18,17 @@ const HocSinhInfoSchema = new mongoose.Schema(
     lop: String,
     phu_huynh: PhuHuynhSchema,
     diadiem_don_tra: String,
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [lng, lat]
+        required: false,
+      },
+    },
     xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xe" },
     state: {
       type: String,
@@ -31,6 +43,9 @@ const HocSinhInfoSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Chỉ mục không gian để query khoảng cách
+HocSinhInfoSchema.index({ location: "2dsphere" });
+
 // Tự động cập nhật thời gian khi state thay đổi
 HocSinhInfoSchema.pre("save", function (next) {
   if (this.isModified("state")) {
@@ -39,11 +54,14 @@ HocSinhInfoSchema.pre("save", function (next) {
   next();
 });
 
-const TaiXeInfoSchema = new mongoose.Schema({
-  bienso: String,
-  tuyen: String,
-  mabanglai: String,
-});
+const TaiXeInfoSchema = new mongoose.Schema(
+  {
+    bienso: String,
+    tuyen: String,
+    mabanglai: String,
+  },
+  { _id: false }
+);
 
 const AdminInfoSchema = new mongoose.Schema(
   {
@@ -92,5 +110,25 @@ UserSchema.pre("save", async function (next) {
 UserSchema.methods.comparePassword = function (plain) {
   return bcrypt.compare(plain, this.password);
 };
+
+HocSinhInfoSchema.pre("save", async function (next) {
+  // Nếu có địa điểm và chưa có tọa độ thì tự động lấy
+  if (this.isModified("diadiem_don_tra") && this.diadiem_don_tra) {
+    const coords = await getCoordinates(this.diadiem_don_tra);
+    if (coords) {
+      this.location = {
+        type: "Point",
+        coordinates: [coords.lon, coords.lat], // GeoJSON = [lng, lat]
+      };
+    }
+  }
+
+  // Cập nhật thời gian state
+  if (this.isModified("state")) {
+    this.state_time = new Date();
+  }
+
+  next();
+});
 
 module.exports = mongoose.model("User", UserSchema);

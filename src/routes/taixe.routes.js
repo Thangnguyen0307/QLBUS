@@ -10,4 +10,6 @@ router.put(
   TaiXeController.updateAllHocSinhState
 );
 
+router.get("/lich-trinh", requireAuth, TaiXeController.getLichTrinhXeTaiXe);
+
 module.exports = router;

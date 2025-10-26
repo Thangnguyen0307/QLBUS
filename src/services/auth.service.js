@@ -75,6 +75,10 @@ const changePassword = async (userId, oldPassword, newPassword) => {
   return user;
 };
 
+async function findByEmail(email) {
+  return await User.findOne({ email });
+}
+
 module.exports = {
   login,
   register,
@@ -82,4 +86,5 @@ module.exports = {
   signAccessToken,
   signRefreshToken,
   changePassword,
+  findByEmail,
 };

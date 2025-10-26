@@ -86,3 +86,64 @@
  *                   type: string
  *                   example: "Lỗi máy chủ khi cập nhật trạng thái học sinh"
  */
+
+/**
+ * @swagger
+ * /taixe/lich-trinh:
+ *   get:
+ *     summary: Lấy lịch trình xe của tài xế hiện tại
+ *     tags: [Tai xe]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy lịch trình xe thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Lấy lịch trình xe thành công
+ *                 xe_id:
+ *                   type: string
+ *                 code_xe:
+ *                   type: string
+ *                   example: XE0001
+ *                 tuyen:
+ *                   type: string
+ *                   example: Tuyến A
+ *                 lich_trinh:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       diadiem:
+ *                         type: string
+ *                         example: "123 Nguyễn Trãi"
+ *                       hoten_hocsinh:
+ *                         type: string
+ *                         example: "Nguyễn Văn A"
+ *                       sdt_hocsinh:
+ *                         type: string
+ *                         example: "0987654321"
+ *                       phu_huynh:
+ *                         type: object
+ *                         properties:
+ *                           hoten:
+ *                             type: string
+ *                             example: "Phạm Thị B"
+ *                           sdt:
+ *                             type: string
+ *                             example: "0909999999"
+ *                           quanhe:
+ *                             type: string
+ *                             example: "Mẹ"
+ *       403:
+ *         description: Không có quyền truy cập
+ *       404:
+ *         description: Không tìm thấy xe
+ *       500:
+ *         description: Lỗi server
+ */

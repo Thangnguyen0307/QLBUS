@@ -49,6 +49,40 @@ const updateAllHocSinhState = async (req, res) => {
   }
 };
 
+// Lấy lịch trình xe của tài xế hiện tại
+const getLichTrinhXeTaiXe = async (req, res) => {
+  try {
+    const user = req.user;
+    if (!user || user.role !== "tai_xe") {
+      return res
+        .status(403)
+        .json({ message: "Chỉ tài xế mới được xem lịch trình của mình" });
+    }
+
+    const xe = await Xe.findOne({ taixe_id: user._id })
+      .populate("hoc_sinh_ids.user_id", "profile.hoten profile.sdt")
+      .lean();
+
+    if (!xe) {
+      return res.status(404).json({ message: "Bạn chưa được gán vào xe nào" });
+    }
+
+    // Trả ra lịch trình, có sắp xếp gần → xa (theo model đã xử lý)
+    res.json({
+      message: "Lấy lịch trình xe thành công",
+      xe_id: xe._id,
+      code_xe: xe.code_xe,
+      tuyen: xe.tuyen,
+      lich_trinh: xe.lich_trinh,
+      tong_hoc_sinh: xe.hoc_sinh_ids?.length || 0,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi lấy lịch trình xe:", err);
+    res.status(500).json({ message: "Lỗi lấy lịch trình xe của tài xế" });
+  }
+};
+
 module.exports = {
   updateAllHocSinhState,
+  getLichTrinhXeTaiXe,
 };

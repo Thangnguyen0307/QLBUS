@@ -1,6 +1,8 @@
 // src/models/xe.model.js
 const mongoose = require("mongoose");
 const User = require("./user.model");
+const haversine = require("haversine-distance"); // bạn cần cài: npm i haversine-distance
+const SCHOOL_LOCATION = { lat: 21.004714, lon: 105.843071 }; // Đại học Bách Khoa Hà Nội
 
 // Schema lịch trình
 const LichTrinhSchema = new mongoose.Schema(
@@ -85,18 +87,32 @@ XeSchema.pre("save", async function (next) {
         _id: { $in: userIds },
         role: "hoc_sinh",
       }).select(
-        "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.phu_huynh"
+        "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.location hoc_sinh_info.phu_huynh"
       );
 
-      this.lich_trinh = users
-        .map((u) => ({
-          diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
-          hoc_sinh_id: u._id,
-          hoten_hocsinh: u.profile?.hoten || "",
-          sdt_hocsinh: u.profile?.sdt || "",
-          phu_huynh: u.hoc_sinh_info?.phu_huynh || {},
-        }))
-        .filter((l) => l.diadiem);
+      // Tạo lịch trình có khoảng cách
+      const lichTrinh = users
+        .map((u) => {
+          const coords = u.hoc_sinh_info?.location?.coordinates;
+          const distance = coords
+            ? haversine(
+                { lat: SCHOOL_LOCATION.lat, lon: SCHOOL_LOCATION.lon },
+                { lat: coords[1], lon: coords[0] }
+              )
+            : Infinity;
+          return {
+            diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
+            hoc_sinh_id: u._id,
+            hoten_hocsinh: u.profile?.hoten || "",
+            sdt_hocsinh: u.profile?.sdt || "",
+            phu_huynh: u.hoc_sinh_info?.phu_huynh || {},
+            distance,
+          };
+        })
+        .filter((l) => l.diadiem)
+        .sort((a, b) => a.distance - b.distance); // sắp xếp gần → xa
+
+      this.lich_trinh = lichTrinh.map(({ distance, ...rest }) => rest);
     }
 
     next();
@@ -104,5 +120,4 @@ XeSchema.pre("save", async function (next) {
     next(err);
   }
 });
-
 module.exports = mongoose.model("Xe", XeSchema);

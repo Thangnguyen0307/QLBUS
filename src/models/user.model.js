@@ -26,7 +26,7 @@ const HocSinhInfoSchema = new mongoose.Schema(
       },
       coordinates: {
         type: [Number], // [lng, lat]
-        required: false,
+        default: [0, 0],
       },
     },
     xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xe" },

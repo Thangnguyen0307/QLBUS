@@ -279,12 +279,11 @@ const getUserDetailById = async (req, res) => {
   }
 };
 
-// ✅ Xóa user theo ID (Admin)
+// Xóa user theo ID (Admin)
 const deleteUserById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Chỉ admin mới được truy cập
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
     }
@@ -294,13 +293,36 @@ const deleteUserById = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy người dùng" });
     }
 
+    // Nếu là học sinh, xóa khỏi xe tương ứng
+    if (user.role === "hoc_sinh" && user.hoc_sinh_info?.xe_id) {
+      const xe = await Xe.findById(user.hoc_sinh_info.xe_id);
+      if (xe) {
+        // Xóa học sinh khỏi danh sách xe
+        xe.hoc_sinh_ids = xe.hoc_sinh_ids.filter(
+          (hs) => hs.user_id.toString() !== id
+        );
+
+        // Xóa học sinh khỏi lịch trình xe
+        xe.lich_trinh = xe.lich_trinh.filter(
+          (lt) => lt.hoc_sinh_id.toString() !== id
+        );
+
+        await xe.save();
+      }
+    }
+    // Nếu là tài xế bỏ gán tài xế ra khỏi xe
+    if (user.role === "tai_xe") {
+      await Xe.updateMany({ taixe_id: id }, { $set: { taixe_id: null } });
+    }
+
+    // Thực hiện xóa user khỏi database
     await User.deleteOne({ _id: id });
 
     res.json({
       message: "Xóa người dùng thành công",
     });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Lỗi xóa người dùng:", err);
     res.status(500).json({ message: "Lỗi khi xóa người dùng" });
   }
 };

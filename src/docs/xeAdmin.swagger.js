@@ -198,3 +198,102 @@
  *       500:
  *         description: Lỗi server
  */
+/**
+ * @swagger
+ * /xe/add-driver:
+ *   post:
+ *     summary: Gán tài xế vào xe (chỉ admin)
+ *     tags: [Admin Xe]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - xeId
+ *               - taixeId
+ *             properties:
+ *               xeId:
+ *                 type: string
+ *                 example: 67201e2a2f14b739beea6c55
+ *                 description: ID của xe cần gán tài xế
+ *               taixeId:
+ *                 type: string
+ *                 example: 671fe3b92f40d8826e13d890
+ *                 description: ID của tài xế cần gán vào xe
+ *     responses:
+ *       200:
+ *         description: Gán tài xế thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Gán tài xế vào xe thành công
+ *                 xe:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 67201e2a2f14b739beea6c55
+ *                     code_xe:
+ *                       type: string
+ *                       example: XE0005
+ *                     bienso:
+ *                       type: string
+ *                       example: 29A-12345
+ *                     tuyen:
+ *                       type: string
+ *                       example: Hà Nội - Bắc Ninh
+ *                     suc_chua:
+ *                       type: number
+ *                       example: 30
+ *                     taixe_id:
+ *                       type: string
+ *                       example: 671fe3b92f40d8826e13d890
+ *       400:
+ *         description: Tài xế không hợp lệ hoặc dữ liệu sai
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Tài xế không hợp lệ"
+ *       403:
+ *         description: Không có quyền truy cập (không phải admin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Chỉ admin mới được truy cập"
+ *       404:
+ *         description: Không tìm thấy xe
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy xe"
+ *       500:
+ *         description: Lỗi máy chủ khi gán tài xế
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi khi gán tài xế vào xe"
+ */

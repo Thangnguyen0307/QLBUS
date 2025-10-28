@@ -50,5 +50,10 @@ router.post(
   requireRole("admin"),
   XeAdminController.transferHocSinh
 );
-
+router.post(
+  "/add-driver",
+  requireAuth,
+  requireRole("admin"),
+  XeAdminController.DriverToXe
+);
 module.exports = router;

@@ -67,6 +67,11 @@ const removeHocSinhFromXe = async (req, res) => {
       (hs) => hs.user_id.toString() !== hocSinhId
     );
 
+    // Đồng thời xóa luôn lịch trình của học sinh đó
+    xe.lich_trinh = xe.lich_trinh.filter(
+      (lt) => lt.hoc_sinh_id.toString() !== hocSinhId
+    );
+
     // Xóa tham chiếu trong học sinh
     const hs = await User.findById(hocSinhId);
     if (hs && hs.role === "hoc_sinh") {
@@ -142,8 +147,48 @@ const transferHocSinh = async (req, res) => {
   }
 };
 
+// API gán tài xế vào xe
+const DriverToXe = async (req, res) => {
+  try {
+    const { xeId, taixeId } = req.body;
+
+    // Chỉ admin mới được thực hiện
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+
+    // Kiểm tra xe tồn tại
+    const xe = await Xe.findById(xeId);
+    if (!xe) {
+      return res.status(404).json({ message: "Không tìm thấy xe" });
+    }
+
+    // Kiểm tra tài xế hợp lệ
+    const taixe = await User.findById(taixeId);
+    if (!taixe || taixe.role !== "tai_xe") {
+      return res.status(400).json({ message: "Tài xế không hợp lệ" });
+    }
+
+    // Nếu tài xế này đang được gán ở xe khác → gỡ ra
+    await Xe.updateMany({ taixe_id: taixeId }, { $set: { taixe_id: null } });
+
+    // Gán tài xế mới cho xe này
+    xe.taixe_id = taixeId;
+    await xe.save();
+
+    res.json({
+      message: "Gán tài xế vào xe thành công",
+      xe,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi gán tài xế:", err);
+    res.status(500).json({ message: "Lỗi khi gán tài xế vào xe" });
+  }
+};
+
 module.exports = {
   addHocSinhToXe,
   removeHocSinhFromXe,
   transferHocSinh,
+  DriverToXe,
 };

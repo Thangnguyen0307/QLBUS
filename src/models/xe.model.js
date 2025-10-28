@@ -1,7 +1,7 @@
 // src/models/xe.model.js
 const mongoose = require("mongoose");
 const User = require("./user.model");
-const haversine = require("haversine-distance"); // bạn cần cài: npm i haversine-distance
+const haversine = require("haversine-distance");
 const SCHOOL_LOCATION = { lat: 21.004714, lon: 105.843071 }; // Đại học Bách Khoa Hà Nội
 
 // Schema lịch trình
@@ -83,16 +83,25 @@ XeSchema.pre("save", async function (next) {
     const userIds = this.hoc_sinh_ids.map((hs) => hs.user_id).filter(Boolean);
 
     if (userIds.length > 0) {
-      const users = await User.find({
-        _id: { $in: userIds },
-        role: "hoc_sinh",
-      }).select(
-        "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.location hoc_sinh_info.phu_huynh"
-      );
+      const users = await mongoose
+        .model("User")
+        .find({
+          _id: { $in: userIds },
+          role: "hoc_sinh",
+        })
+        .select(
+          "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.location hoc_sinh_info.phu_huynh"
+        );
 
-      // Tạo lịch trình có khoảng cách
-      const lichTrinh = users
-        .map((u) => {
+      // Build lịch trình mới (chỉ cho học sinh chưa có trong lịch trình)
+      const existingIds = this.lich_trinh.map((lt) =>
+        lt.hoc_sinh_id?.toString()
+      );
+      const newLichTrinhItems = [];
+
+      for (const u of users) {
+        const idStr = u._id.toString();
+        if (!existingIds.includes(idStr)) {
           const coords = u.hoc_sinh_info?.location?.coordinates;
           const distance = coords
             ? haversine(
@@ -100,19 +109,34 @@ XeSchema.pre("save", async function (next) {
                 { lat: coords[1], lon: coords[0] }
               )
             : Infinity;
-          return {
+
+          newLichTrinhItems.push({
             diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
             hoc_sinh_id: u._id,
             hoten_hocsinh: u.profile?.hoten || "",
             sdt_hocsinh: u.profile?.sdt || "",
             phu_huynh: u.hoc_sinh_info?.phu_huynh || {},
             distance,
-          };
-        })
-        .filter((l) => l.diadiem)
-        .sort((a, b) => a.distance - b.distance); // sắp xếp gần → xa
+          });
+        }
+      }
 
-      this.lich_trinh = lichTrinh.map(({ distance, ...rest }) => rest);
+      // Merge lịch trình cũ + mới, rồi sort
+      const merged = [
+        ...this.lich_trinh.map((lt) => ({
+          ...(lt.toObject?.() ?? lt),
+          distance: haversine(
+            { lat: SCHOOL_LOCATION.lat, lon: SCHOOL_LOCATION.lon },
+            {
+              lat: lt?.location?.coordinates?.[1] ?? SCHOOL_LOCATION.lat,
+              lon: lt?.location?.coordinates?.[0] ?? SCHOOL_LOCATION.lon,
+            }
+          ),
+        })),
+        ...newLichTrinhItems,
+      ].sort((a, b) => a.distance - b.distance);
+
+      this.lich_trinh = merged.map(({ distance, ...rest }) => rest);
     }
 
     next();
@@ -120,4 +144,5 @@ XeSchema.pre("save", async function (next) {
     next(err);
   }
 });
+
 module.exports = mongoose.model("Xe", XeSchema);

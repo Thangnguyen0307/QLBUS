@@ -56,4 +56,9 @@ router.post(
   requireRole("admin"),
   XeAdminController.DriverToXe
 );
+router.delete(
+  "/:xeId/remove-driver",
+  requireAuth,
+  XeAdminController.removeDriverFromXe
+);
 module.exports = router;

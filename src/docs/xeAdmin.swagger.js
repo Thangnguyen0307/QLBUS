@@ -297,3 +297,84 @@
  *                   type: string
  *                   example: "Lỗi khi gán tài xế vào xe"
  */
+/**
+ * @swagger
+ * /api/xe/unassign-driver/{xeId}:
+ *   delete:
+ *     summary: Gỡ tài xế ra khỏi xe (chỉ admin)
+ *     tags: [Admin Xe]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: xeId
+ *         in: path
+ *         required: true
+ *         description: ID của xe cần gỡ tài xế
+ *         schema:
+ *           type: string
+ *           example: 67201e2a2f14b739beea6c55
+ *     responses:
+ *       200:
+ *         description: Gỡ tài xế khỏi xe thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Đã gỡ tài xế khỏi xe thành công
+ *                 xe:
+ *                   type: object
+ *                   properties:
+ *                     _id:
+ *                       type: string
+ *                       example: 67201e2a2f14b739beea6c55
+ *                     code_xe:
+ *                       type: string
+ *                       example: XE0003
+ *                     taixe_id:
+ *                       type: string
+ *                       nullable: true
+ *                       example: null
+ *       400:
+ *         description: Xe chưa có tài xế để gỡ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Xe này chưa có tài xế"
+ *       403:
+ *         description: Không có quyền (không phải admin)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Chỉ admin mới được truy cập"
+ *       404:
+ *         description: Không tìm thấy xe
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Không tìm thấy xe"
+ *       500:
+ *         description: Lỗi server khi gỡ tài xế
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Lỗi khi gỡ tài xế khỏi xe"
+ */

@@ -186,9 +186,43 @@ const DriverToXe = async (req, res) => {
   }
 };
 
+const removeDriverFromXe = async (req, res) => {
+  try {
+    const { xeId } = req.params;
+
+    // Chỉ admin mới được phép
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Chỉ admin mới được truy cập" });
+    }
+
+    const xe = await Xe.findById(xeId);
+    if (!xe) {
+      return res.status(404).json({ message: "Không tìm thấy xe" });
+    }
+
+    // Nếu xe chưa có tài xế thì báo lỗi
+    if (!xe.taixe_id) {
+      return res.status(400).json({ message: "Xe này chưa có tài xế để xóa" });
+    }
+
+    // Gỡ tài xế
+    xe.taixe_id = null;
+    await xe.save();
+
+    res.json({
+      message: "Xóa tài xế khỏi xe thành công",
+      xe,
+    });
+  } catch (err) {
+    console.error("❌ Lỗi khi xóa tài xế khỏi xe:", err);
+    res.status(500).json({ message: "Lỗi khi xóa tài xế khỏi xe" });
+  }
+};
+
 module.exports = {
   addHocSinhToXe,
   removeHocSinhFromXe,
   transferHocSinh,
   DriverToXe,
+  removeDriverFromXe,
 };

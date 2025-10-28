@@ -140,6 +140,19 @@ const createXe = async (req, res) => {
 
     await newXe.save();
 
+    // Sau khi tạo xe, gắn xe_id vào tài xế (tai_xe_info)
+    taixe.tai_xe_info = {
+      ...(taixe.tai_xe_info?.toObject?.() ?? taixe.tai_xe_info ?? {}),
+      xe_id: {
+        xe_id: newXe._id,
+        bienso: newXe.bienso,
+        tuyen: newXe.tuyen,
+        suc_chua: newXe.suc_chua,
+      },
+    };
+
+    await taixe.save();
+
     res.status(201).json({
       message: "Tạo xe thành công",
       xe: newXe,

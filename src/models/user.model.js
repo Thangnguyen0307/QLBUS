@@ -54,11 +54,22 @@ HocSinhInfoSchema.pre("save", function (next) {
   next();
 });
 
-const TaiXeInfoSchema = new mongoose.Schema(
+const XeRefSchema = new mongoose.Schema(
   {
+    xe_id: { type: mongoose.Schema.Types.ObjectId, ref: "Xe" },
     bienso: String,
     tuyen: String,
+    suc_chua: Number,
+  },
+  { _id: false }
+);
+
+const TaiXeInfoSchema = new mongoose.Schema(
+  {
+    xe_id: XeRefSchema,
+    bienso: String,
     mabanglai: String,
+    suc_chua: Number,
   },
   { _id: false }
 );

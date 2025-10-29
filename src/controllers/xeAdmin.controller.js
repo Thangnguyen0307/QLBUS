@@ -38,7 +38,7 @@ const addHocSinhToXe = async (req, res) => {
           ngaysinh: hs.profile?.ngaysinh || "",
           gioitinh: hs.profile?.gioitinh || "",
           sdt: hs.profile?.sdt || "",
-          diachi: hs.profile?.diachi || "",
+          diachi: hs.hoc_sinh_info?.diadiem_don_tra || "",
           cccd: hs.profile?.cccd || "",
           avatar: hs.profile?.avatar || "",
         });

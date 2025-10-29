@@ -1,4 +1,5 @@
 const User = require("../models/user.model");
+const Xe = require("../models/xe.model");
 const bcrypt = require("bcryptjs");
 const cloudinary = require("../config/cloudinary.config");
 const { sendPasswordEmail } = require("../utils/mailer");

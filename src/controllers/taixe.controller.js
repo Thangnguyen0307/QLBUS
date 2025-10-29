@@ -59,22 +59,44 @@ const getLichTrinhXeTaiXe = async (req, res) => {
         .json({ message: "Chỉ tài xế mới được xem lịch trình của mình" });
     }
 
-    const xe = await Xe.findOne({ taixe_id: user._id })
-      .populate("hoc_sinh_ids.user_id", "profile.hoten profile.sdt")
-      .lean();
+    // Tìm xe mà tài xế đang điều khiển
+    const xe = await Xe.findOne({ taixe_id: user._id }).lean();
 
     if (!xe) {
       return res.status(404).json({ message: "Bạn chưa được gán vào xe nào" });
     }
 
-    // Trả ra lịch trình, có sắp xếp gần xa (theo model đã xử lý)
+    //Lấy danh sách học sinh theo xe nhưng chỉ lọc state = done hoặc waiting
+    const hocSinhs = await User.find({
+      role: "hoc_sinh",
+      "hoc_sinh_info.xe_id": xe._id,
+      "hoc_sinh_info.state": { $in: ["done", "waiting"] },
+    })
+      .select(
+        "profile.hoten profile.sdt profile.avatar hoc_sinh_info.mahs hoc_sinh_info.lop hoc_sinh_info.diadiem_don_tra hoc_sinh_info.state hoc_sinh_info.phu_huynh"
+      )
+      .lean();
+
+    // Gộp thông tin vào lịch trình (giống build trong model)
+    const lichTrinh = hocSinhs.map((hs) => ({
+      hoc_sinh_id: hs._id,
+      mahs: hs.hoc_sinh_info?.mahs || "",
+      hoten_hocsinh: hs.profile?.hoten || "",
+      sdt_hocsinh: hs.profile?.sdt || "",
+      avatar: hs.profile?.avatar || null,
+      diadiem: hs.hoc_sinh_info?.diadiem_don_tra || "Chưa cập nhật",
+      lop: hs.hoc_sinh_info?.lop || "",
+      state: hs.hoc_sinh_info?.state,
+      phu_huynh: hs.hoc_sinh_info?.phu_huynh || {},
+    }));
+
     res.json({
       message: "Lấy lịch trình xe thành công",
       xe_id: xe._id,
       code_xe: xe.code_xe,
       tuyen: xe.tuyen,
-      lich_trinh: xe.lich_trinh,
-      tong_hoc_sinh: xe.hoc_sinh_ids?.length || 0,
+      tong_hoc_sinh: lichTrinh.length,
+      lich_trinh: lichTrinh,
     });
   } catch (err) {
     console.error("Lỗi lấy lịch trình xe:", err);

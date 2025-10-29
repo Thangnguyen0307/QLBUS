@@ -172,13 +172,24 @@ const updateXe = async (req, res) => {
     const xe = await Xe.findById(id);
     if (!xe) return res.status(404).json({ message: "Không tìm thấy xe" });
 
-    if (taixe_id) {
-      const taixe = await User.findById(taixe_id);
-      if (!taixe || taixe.role !== "tai_xe") {
+    let oldTaixe = null;
+    let newTaixe = null;
+
+    // Nếu có đổi tài xế
+    if (taixe_id && taixe_id.toString() !== xe.taixe_id?.toString()) {
+      if (xe.taixe_id) {
+        oldTaixe = await User.findById(xe.taixe_id);
+      }
+
+      // Kiểm tra tài xế mới hợp lệ
+      newTaixe = await User.findById(taixe_id);
+      if (!newTaixe || newTaixe.role !== "tai_xe") {
         return res
           .status(400)
           .json({ message: "Tài xế không hợp lệ hoặc không tồn tại" });
       }
+
+      // Cập nhật xe với tài xế mới
       xe.taixe_id = taixe_id;
     }
 
@@ -186,6 +197,7 @@ const updateXe = async (req, res) => {
     if (suc_chua) xe.suc_chua = suc_chua;
     if (tuyen) xe.tuyen = tuyen;
 
+    // Cập nhật danh sách hs
     if (Array.isArray(hoc_sinh_ids)) {
       const hocSinhDocs = await Promise.all(
         hoc_sinh_ids.map(async (item) => {
@@ -208,6 +220,25 @@ const updateXe = async (req, res) => {
     }
 
     await xe.save();
+
+    // Nếu đổi tài xế thì cập nhật ngược lại cho User
+    if (oldTaixe && oldTaixe.tai_xe_info?.xe_id) {
+      oldTaixe.tai_xe_info.xe_id = null;
+      await oldTaixe.save();
+    }
+
+    if (newTaixe) {
+      newTaixe.tai_xe_info = {
+        ...(newTaixe.tai_xe_info?.toObject?.() ?? newTaixe.tai_xe_info ?? {}),
+        xe_id: {
+          xe_id: xe._id,
+          bienso: xe.bienso,
+          tuyen: xe.tuyen,
+          suc_chua: xe.suc_chua,
+        },
+      };
+      await newTaixe.save();
+    }
 
     res.json({ message: "Cập nhật xe thành công", xe });
   } catch (err) {

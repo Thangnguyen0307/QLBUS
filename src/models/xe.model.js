@@ -11,6 +11,8 @@ const LichTrinhSchema = new mongoose.Schema(
     hoc_sinh_id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     hoten_hocsinh: String,
     sdt_hocsinh: String,
+    mahs: String,
+    avatar: String,
     phu_huynh: {
       hoten: String,
       sdt: String,
@@ -90,7 +92,7 @@ XeSchema.pre("save", async function (next) {
           role: "hoc_sinh",
         })
         .select(
-          "profile.hoten profile.sdt hoc_sinh_info.diadiem_don_tra hoc_sinh_info.location hoc_sinh_info.phu_huynh"
+          "profile.hoten profile.sdt profile.avatar hoc_sinh_info.mahs hoc_sinh_info.diadiem_don_tra hoc_sinh_info.location hoc_sinh_info.phu_huynh"
         );
 
       // Build lịch trình mới (chỉ cho học sinh chưa có trong lịch trình)
@@ -113,8 +115,10 @@ XeSchema.pre("save", async function (next) {
           newLichTrinhItems.push({
             diadiem: u.hoc_sinh_info?.diadiem_don_tra || null,
             hoc_sinh_id: u._id,
+            mahs: u.hoc_sinh_info?.mahs || "",
             hoten_hocsinh: u.profile?.hoten || "",
             sdt_hocsinh: u.profile?.sdt || "",
+            avatar: u.profile?.avatar || "",
             phu_huynh: u.hoc_sinh_info?.phu_huynh || {},
             distance,
           });

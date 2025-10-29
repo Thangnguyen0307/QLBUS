@@ -25,4 +25,23 @@ const setStudentOnBus = async (req, res) => {
   }
 };
 
-module.exports = { setStudentOnBus };
+const getProfileByMaHS = async (req, res) => {
+  try {
+    const { mahs } = req.params;
+
+    const user = await User.findOne({ "hoc_sinh_info.mahs": mahs })
+      .select("-password")
+      .populate("hoc_sinh_info.xe_id", "bienso tuyen");
+
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy học sinh" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("Lỗi getProfileByMaHS:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
+module.exports = { setStudentOnBus, getProfileByMaHS };

@@ -67,7 +67,7 @@ const getLichTrinhXeTaiXe = async (req, res) => {
       return res.status(404).json({ message: "Bạn chưa được gán vào xe nào" });
     }
 
-    // Trả ra lịch trình, có sắp xếp gần → xa (theo model đã xử lý)
+    // Trả ra lịch trình, có sắp xếp gần xa (theo model đã xử lý)
     res.json({
       message: "Lấy lịch trình xe thành công",
       xe_id: xe._id,
@@ -77,7 +77,7 @@ const getLichTrinhXeTaiXe = async (req, res) => {
       tong_hoc_sinh: xe.hoc_sinh_ids?.length || 0,
     });
   } catch (err) {
-    console.error("❌ Lỗi lấy lịch trình xe:", err);
+    console.error("Lỗi lấy lịch trình xe:", err);
     res.status(500).json({ message: "Lỗi lấy lịch trình xe của tài xế" });
   }
 };

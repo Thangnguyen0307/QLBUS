@@ -78,9 +78,23 @@ const login = async (req, res) => {
   }
 };
 
+const logout = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Thiếu access token" });
+    }
+
+    return res.status(200).json({ message: "Đăng xuất thành công" });
+  } catch (error) {
+    console.error(" Lỗi logout:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+};
+
 const changePassword = async (req, res) => {
   try {
-    const userId = req.user._id; // lấy từ middleware requireAuth
+    const userId = req.user._id;
     const { oldPassword, newPassword } = req.body;
 
     if (!oldPassword || !newPassword) {
@@ -162,6 +176,7 @@ module.exports = {
   register,
   verifyUserOtp,
   login,
+  logout,
   changePassword,
   forgotPassword,
   resetPassword,

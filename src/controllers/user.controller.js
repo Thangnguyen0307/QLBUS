@@ -13,7 +13,7 @@ function generateRandomPassword(length = 8) {
   ).join("");
 }
 
-// ✅ Lấy profile người dùng
+// Lấy profile người dùng
 const getProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
@@ -316,14 +316,14 @@ const deleteUserById = async (req, res) => {
       await Xe.updateMany({ taixe_id: id }, { $set: { taixe_id: null } });
     }
 
-    // Thực hiện xóa user khỏi database
+    //xóa user
     await User.deleteOne({ _id: id });
 
     res.json({
       message: "Xóa người dùng thành công",
     });
   } catch (err) {
-    console.error("❌ Lỗi xóa người dùng:", err);
+    console.error("Lỗi xóa người dùng:", err);
     res.status(500).json({ message: "Lỗi khi xóa người dùng" });
   }
 };

@@ -152,3 +152,24 @@
  *       400:
  *         description: OTP không hợp lệ hoặc thiếu dữ liệu
  */
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Đăng xuất người dùng
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đăng xuất thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               example:
+ *                 message: "Đăng xuất thành công"
+ *       401:
+ *         description: Token không hợp lệ hoặc hết hạn
+ *       500:
+ *         description: Lỗi máy chủ
+ */

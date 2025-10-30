@@ -184,26 +184,16 @@ const updateProfile = async (req, res) => {
   }
 };
 
-// ✅ Upload avatar
+// Upload avatar
 const uploadAvatar = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const user = await User.findById(userId);
-    if (!user)
-      return res.status(404).json({ message: "Không tìm thấy người dùng" });
-
     if (!req.file) {
       return res.status(400).json({ message: "Vui lòng chọn file ảnh" });
     }
 
-    user.profile = user.profile || {};
-    user.profile.avatar = req.file.path;
-    await user.save();
-
     res.json({
       message: "Cập nhật avatar thành công",
       avatar: req.file.path,
-      user: await User.findById(userId).select("-password"),
     });
   } catch (err) {
     console.error("Upload avatar error:", err);

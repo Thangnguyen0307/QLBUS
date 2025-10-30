@@ -247,7 +247,7 @@ const updateXe = async (req, res) => {
   }
 };
 
-// ✅ Xóa xe
+// Xóa xe
 const deleteXe = async (req, res) => {
   try {
     const { id } = req.params;

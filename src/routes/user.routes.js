@@ -15,7 +15,6 @@ router.post(
 router.put("/update-profile", requireAuth, UserController.updateProfile);
 router.post(
   "/upload-avatar",
-  requireAuth,
   upload.single("avatar"),
   UserController.uploadAvatar
 );
